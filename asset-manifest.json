@@ -1,0 +1,36 @@
+{
+  "files": {
+    "main.css": "/flower-shop/static/css/main.3bd20f1c.css",
+    "main.js": "/flower-shop/static/js/main.ff0f3781.js",
+    "static/media/login_bckgrnd.png": "/flower-shop/static/media/login_bckgrnd.a9fcd6c05f32193e3fd9.png",
+    "static/media/hero.png": "/flower-shop/static/media/hero.986224014a21e0c74cd3.png",
+    "static/media/photo_18_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_18_2026-02-17_18-15-53.52111fdd28cc532324d2.jpg",
+    "static/media/photo_14_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_14_2026-02-17_18-15-53.bc592a86d96ca28b39ce.jpg",
+    "static/media/photo_10_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_10_2026-02-17_18-15-53.f193e4dbdb9aa29ea7da.jpg",
+    "static/media/photo_11_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_11_2026-02-17_18-15-53.6e53d050c0f714a678e6.jpg",
+    "static/media/photo_1_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_1_2026-02-17_18-15-53.ab6864af75e4b3168402.jpg",
+    "static/media/photo_20_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_20_2026-02-17_18-15-53.a297ca846fba4153e593.jpg",
+    "static/media/photo_17_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_17_2026-02-17_18-15-53.94da29371900a96680fa.jpg",
+    "static/media/photo_2_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_2_2026-02-17_18-15-53.84e0406551e4c8898373.jpg",
+    "static/media/photo_21_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_21_2026-02-17_18-15-53.ff38a0103e9b4c97b1d9.jpg",
+    "static/media/photo_9_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_9_2026-02-17_18-15-53.cb9db0a73db1341c7f96.jpg",
+    "static/media/photo_16_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_16_2026-02-17_18-15-53.057b773edd91728903c0.jpg",
+    "static/media/photo_19_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_19_2026-02-17_18-15-53.0eeaf9b28b1bdf991308.jpg",
+    "static/media/photo_6_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_6_2026-02-17_18-15-53.63743d1253f9b6e7bf28.jpg",
+    "static/media/photo_3_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_3_2026-02-17_18-15-53.b923f61f9868e4642734.jpg",
+    "static/media/photo_13_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_13_2026-02-17_18-15-53.5f002c1022eb9fe31936.jpg",
+    "static/media/photo_5_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_5_2026-02-17_18-15-53.a4aeabe7bba78cd05476.jpg",
+    "static/media/photo_7_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_7_2026-02-17_18-15-53.9decf2fb3062cc0cfd70.jpg",
+    "static/media/photo_15_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_15_2026-02-17_18-15-53.b21badca85ae5ce642cd.jpg",
+    "static/media/photo_4_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_4_2026-02-17_18-15-53.616834ad027965f66a9c.jpg",
+    "static/media/photo_8_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_8_2026-02-17_18-15-53.ce4f148da83fa9eb2a32.jpg",
+    "static/media/photo_12_2026-02-17_18-15-53.jpg": "/flower-shop/static/media/photo_12_2026-02-17_18-15-53.ffbeaf7a4938a88c31dd.jpg",
+    "index.html": "/flower-shop/index.html",
+    "main.3bd20f1c.css.map": "/flower-shop/static/css/main.3bd20f1c.css.map",
+    "main.ff0f3781.js.map": "/flower-shop/static/js/main.ff0f3781.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.3bd20f1c.css",
+    "static/js/main.ff0f3781.js"
+  ]
+}
