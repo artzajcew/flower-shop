@@ -41,14 +41,14 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #ee00ff !important;
+  border-color: #6C0B08 !important;
   box-shadow: 0 0 0 2px rgba(255, 0, 212, 0.2);
 }
 
 .register-btn {
   width: 100%;
   padding: 12px;
-  background-color: #f379cc;
+  background-color: #6C0B08;
   color: white;
   border: none;
   border-radius: 4px;
@@ -58,7 +58,7 @@
 }
 
 .register-btn:hover {
-  background-color: #df3dcf;
+  background-color: #4e0806;
 }
 
 .error-message {
@@ -86,7 +86,7 @@
 }
 
 .login-link a {
-  color: #ff00c3;
+  color: #6C0B08;
   text-decoration: none;
 }
 

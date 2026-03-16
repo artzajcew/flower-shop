@@ -32,7 +32,7 @@
 .product-category {
   display: inline-block;
   padding: 4px 8px;
-  background-color: #f166e6 !important;
+  background-color: #6C0B08 !important;
   border-radius: 4px;
   font-size: 12px;
   color: #f5f1f1;
@@ -56,13 +56,13 @@
   margin: 0 0 15px;
   font-size: 20px;
   font-weight: bold;
-  color: #259b2b !important;
+  color: #686A26 !important;
 }
 
 .add-to-cart-btn {
   width: 100%;
   padding: 10px;
-  background-color: #ef65d1;
+  background-color: #6C0B08;
   color: white;
   border: none;
   border-radius: 10px;

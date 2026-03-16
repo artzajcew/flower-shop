@@ -1,10 +1,10 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { 
-  getOrders, 
-  getOrder, 
+import React, { createContext, useState, useContext } from 'react';
+import {
+  getOrders,
+  getOrder,
   createOrder as apiCreateOrder,
   updateOrderStatus as apiUpdateStatus,
-  searchOrders as apiSearchOrders
+  getUserOrders  // Новый импорт
 } from '../api/api';
 
 const OrderContext = createContext();
@@ -30,10 +30,14 @@ export function OrderProvider({ children }) {
   const createOrder = async (orderData) => {
     try {
       setLoading(true);
+      console.log('OrderContext: создание заказа', orderData);
+
       const response = await apiCreateOrder(orderData);
+      console.log('OrderContext: ответ', response.data);
+
       return response.data.id;
     } catch (err) {
-      console.error('Ошибка создания заказа:', err);
+      console.error('OrderContext: ошибка создания заказа:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -45,7 +49,7 @@ export function OrderProvider({ children }) {
     try {
       setLoading(true);
       await apiUpdateStatus(orderId, newStatus, comment);
-      await loadOrders(); // перезагружаем список
+      await loadOrders();
     } catch (err) {
       console.error('Ошибка обновления статуса:', err);
       throw err;
@@ -65,14 +69,21 @@ export function OrderProvider({ children }) {
     }
   };
 
-  // Поиск заказов пользователя
-  const searchUserOrders = async (email, phone) => {
+  // Поиск заказов пользователя - ИСПРАВЛЕНО! Используем тот же эндпоинт, что и в Swagger
+  const getUserOrdersList = async () => {
     try {
-      const response = await apiSearchOrders(email, phone);
+      setLoading(true);
+      console.log('Получение заказов текущего пользователя');
+
+      const response = await getUserOrders();
+      console.log('Найденные заказы:', response.data);
+
       return response.data;
     } catch (err) {
-      console.error('Ошибка поиска заказов:', err);
+      console.error('Ошибка получения заказов:', err);
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -84,7 +95,7 @@ export function OrderProvider({ children }) {
       createOrder,
       updateOrderStatus,
       getOrderById,
-      searchUserOrders
+      getUserOrdersList  // Заменяем searchUserOrders на getUserOrdersList
     }}>
       {children}
     </OrderContext.Provider>

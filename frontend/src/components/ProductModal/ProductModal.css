@@ -50,7 +50,7 @@
 .modal-category {
   display: inline-block;
   padding: 4px 8px;
-  background: #f174c7f2;
+  background: #6C0B08;
   border-radius: 10px;
   font-size: 14px;
   margin-bottom: 10px;
@@ -65,7 +65,7 @@
 
 .modal-price {
   font-size: 28px;
-  color: #10a715;
+  color: #686A26;
   font-weight: bold;
   margin: 0 0 20px 0;
 }
@@ -77,7 +77,7 @@
 .modal-add-to-cart {
   width: 100%;
   padding: 15px;
-  background-color: #ec6be1;
+  background-color: #6C0B08;
   color: white;
   border: none;
   border-radius: 8px;

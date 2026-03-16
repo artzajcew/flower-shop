@@ -19,24 +19,6 @@ function AdminPage() {
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="admin-login">
-        <h2>Вход для администратора</h2>
-        <form onSubmit={handleLogin}>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Пароль"
-          />
-          <button type="submit">Войти</button>
-        </form>
-        <p className="hint">(Подсказка: admin123)</p>
-      </div>
-    );
-  }
-
   return (
     <div className="admin-page">
       <h1>Админ-панель</h1>

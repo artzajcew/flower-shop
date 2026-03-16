@@ -101,7 +101,7 @@
 
 .checkout-btn {
   padding: 15px 40px;
-  background-color: #e26aba;
+  background-color: #6C0B08;
   color: white;
   border: none;
   border-radius: 6px;
@@ -112,7 +112,7 @@
 }
 
 .checkout-btn:hover {
-  background-color: #a24394;
+  background-color: #500806;
 }
 
 @media (max-width: 768px) {

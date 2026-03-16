@@ -72,15 +72,15 @@
 
 .filter-btn {
   padding: 12px 30px;
-  border: 2px solid #e581de;
+  border: 2px solid #310301;
   background: transparent;
-  color: #ef9bd1;
+  color: #6C0B08;
   border-radius: 30px;
   cursor: pointer;
 }
 
 .filter-btn.active {
-  background: #f9a2f3;
+  background: #6C0B08;
   color: white;
 }
 

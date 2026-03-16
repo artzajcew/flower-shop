@@ -1,159 +1,158 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrders } from '../context/OrderContext';
+import { useAuth } from '../context/AuthContext';
 import './MyOrdersPage.css';
 
 function MyOrdersPage() {
   const navigate = useNavigate();
-  const { searchUserOrders, loading } = useOrders();
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const { getUserOrdersList, loading } = useOrders();
+  const { user } = useAuth();
   const [userOrders, setUserOrders] = useState([]);
-  const [searched, setSearched] = useState(false);
+  const [loadingOrders, setLoadingOrders] = useState(true);
   const [error, setError] = useState('');
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    setError('');
-    
-    if (!email && !phone) {
-      setError('Заполните хотя бы одно поле');
-      return;
+  // Автоматически загружаем заказы при загрузке страницы
+  useEffect(() => {
+    if (user) {
+      loadUserOrders();
     }
+  }, [user]);
 
+  const loadUserOrders = async () => {
     try {
-      const orders = await searchUserOrders(email || null, phone || null);
-      setUserOrders(orders);
-      setSearched(true);
+      setLoadingOrders(true);
+      setError('');
+      console.log('Загрузка заказов пользователя');
+
+      const orders = await getUserOrdersList();
+      console.log('Получены заказы:', orders);
+
+      setUserOrders(orders || []);
     } catch (err) {
-      setError('Ошибка при поиске заказов');
+      console.error('Ошибка загрузки заказов:', err);
+      setError('Ошибка при загрузке заказов');
+    } finally {
+      setLoadingOrders(false);
     }
   };
 
   const getStatusText = (status) => {
     const statusMap = {
-      'processing': 'Обрабатывается',
-      'confirmed': 'Подтвержден',
-      'shipped': 'Отправлен',
-      'delivered': 'Доставлен',
-      'cancelled': 'Отменен'
+      'Новый': 'Новый',
+      'В сборке': 'В сборке',
+      'Доставляется': 'Доставляется',
+      'Выполнен': 'Выполнен',
+      'Отменен': 'Отменен'
     };
     return statusMap[status] || status;
   };
 
   const getStatusColor = (status) => {
     const colorMap = {
-      'processing': '#ffc107',
-      'confirmed': '#17a2b8',
-      'shipped': '#007bff',
-      'delivered': '#28a745',
-      'cancelled': '#dc3545'
+      'Новый': '#ffc107',
+      'В сборке': '#17a2b8',
+      'Доставляется': '#007bff',
+      'Выполнен': '#28a745',
+      'Отменен': '#dc3545'
     };
     return colorMap[status] || '#6c757d';
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return 'Дата не указана';
+    try {
+      return new Date(dateString).toLocaleString('ru-RU', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch {
+      return dateString;
+    }
   };
+
+  if (!user) {
+    return (
+      <div className="my-orders-page">
+        <h1>Мои заказы</h1>
+        <div className="not-authorized">
+          <p>Для просмотра заказов необходимо войти в систему</p>
+          <button onClick={() => navigate('/login')} className="login-btn">
+            Войти
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadingOrders) {
+    return (
+      <div className="my-orders-page">
+        <h1>Мои заказы</h1>
+        <div className="loading">Загрузка заказов...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="my-orders-page">
       <h1>Мои заказы</h1>
-      
-      <div className="search-section">
-        <h3>Введите ваши данные для поиска заказов</h3>
-        <form onSubmit={handleSearch} className="search-form">
-          <div className="form-group">
-            <label>Email:</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="ivan@example.com"
-              disabled={loading}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Телефон:</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+7 (999) 123-45-67"
-              disabled={loading}
-            />
-          </div>
-          
-          <button type="submit" className="search-btn" disabled={loading}>
-            {loading ? 'Поиск...' : 'Найти заказы'}
-          </button>
-        </form>
-        <p className="hint">* Заполните хотя бы одно поле</p>
-        {error && <div className="error-message">{error}</div>}
-      </div>
 
-      {searched && !loading && (
-        <div className="orders-section">
-          {userOrders.length === 0 ? (
-            <div className="no-orders">
-              <p>Заказы не найдены</p>
-              <button onClick={() => navigate('/')} className="catalog-btn">
-                Перейти в каталог
-              </button>
-            </div>
-          ) : (
-            <>
-              <h2>Найдено заказов: {userOrders.length}</h2>
-              <div className="orders-list">
-                {userOrders.map(order => (
-                  <div key={order.id} className="order-card">
-                    <div className="order-header">
-                      <h3>Заказ #{order.id}</h3>
-                      <span 
-                        className="status-badge"
-                        style={{ backgroundColor: getStatusColor(order.status) }}
-                      >
-                        {getStatusText(order.status)}
-                      </span>
-                    </div>
-                    
-                    <div className="order-info">
-                      <p><strong>Дата:</strong> {formatDate(order.createdAt)}</p>
-                      <p><strong>Сумма:</strong> {order.total} ₽</p>
-                      <p><strong>Товаров:</strong> {order.items.length}</p>
-                    </div>
-                    
-                    <div className="order-items-preview">
-                      {order.items.slice(0, 2).map(item => (
-                        <div key={item.id} className="preview-item">
-                          {item.name.substring(0, 30)}... x{item.quantity}
-                        </div>
-                      ))}
-                      {order.items.length > 2 && (
-                        <div className="more-items">и еще {order.items.length - 2} товара(ов)</div>
-                      )}
-                    </div>
-                    
-                    <button 
-                      className="details-btn"
-                      onClick={() => navigate(`/order/${order.id}`)}
+      {error && <div className="error-message">{error}</div>}
+
+      <div className="orders-section">
+        {userOrders.length === 0 ? (
+          <div className="no-orders">
+            <p>У вас пока нет заказов</p>
+            <button onClick={() => navigate('/')} className="catalog-btn">
+              Перейти в каталог
+            </button>
+          </div>
+        ) : (
+          <>
+            <h2>Всего заказов: {userOrders.length}</h2>
+            <div className="orders-list">
+              {userOrders.map(order => (
+                <div key={order.id} className="order-card">
+                  <div className="order-header">
+                    <h3>Заказ #{order.id}</h3>
+                    <span
+                      className="status-badge"
+                      style={{ backgroundColor: getStatusColor(order.status) }}
                     >
-                      Подробнее
-                    </button>
+                      {getStatusText(order.status)}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      )}
+
+                  <div className="order-info">
+                    <p><strong>Дата:</strong> {formatDate(order.order_date)}</p>
+                    <p><strong>Сумма:</strong> {order.total_price} ₽</p>
+                    <p><strong>Товаров:</strong> {order.items?.length || 0}</p>
+                  </div>
+
+                  <div className="order-items-preview">
+                    {order.items?.slice(0, 2).map((item, idx) => (
+                      <div key={idx} className="preview-item">
+                        {item.product_name || `Товар #${item.good_id}`} x{item.count}
+                      </div>
+                    ))}
+                    {order.items?.length > 2 && (
+                      <div className="more-items">и еще {order.items.length - 2} товара(ов)</div>
+                    )}
+                  </div>
+
+                  <button
+                    className="details-btn"
+                    onClick={() => navigate(`/order/${order.id}`)}
+                  >
+                    Подробнее
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
