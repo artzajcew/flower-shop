@@ -71,16 +71,19 @@ function CheckoutPage() {
     
     try {
       // Подготавливаем данные для заказа
-      const orderData = {
-        ...formData,
-        items: cart.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity
-        })),
-        total: totalPrice
-      };
+      // В функции handleSubmit, замените создание orderData на:
+
+const orderData = {
+  recipient_name: formData.fullName,
+  recipient_phone: formData.phone,
+  delivery_address: formData.deliveryMethod === 'delivery' ? formData.address : 'Самовывоз',
+  delivery_date: new Date(Date.now() + 24*60*60*1000).toISOString(), // завтра
+  items: cart.map(item => ({
+    good_id: item.id,           // было id, нужно good_id
+    count: item.quantity        // было quantity, нужно count
+  }))
+};
+
       
       const orderId = await createOrder(orderData);
       clearCart();

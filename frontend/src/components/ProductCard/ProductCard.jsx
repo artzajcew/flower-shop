@@ -1,3 +1,4 @@
+// frontend/src/components/ProductCard/ProductCard.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
@@ -8,7 +9,15 @@ function ProductCard({ id, name, price, image, category, description }) {
   const navigate = useNavigate();
   const [imgError, setImgError] = useState(false);
 
-  const product = { id, name, price, image, category, description };
+  // Создаем объект product внутри компонента из пропсов
+  const product = { 
+    id, 
+    name, 
+    price, 
+    image, 
+    category, 
+    description 
+  };
 
   const handleCardClick = () => {
     navigate(`/product/${id}`, { 
@@ -26,6 +35,9 @@ function ProductCard({ id, name, price, image, category, description }) {
     setImgError(true);
   };
 
+  // Определяем URL изображения
+  const imageUrl = image || '/placeholder.jpg';
+
   return (
     <div className="product-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
       {imgError ? (
@@ -34,7 +46,7 @@ function ProductCard({ id, name, price, image, category, description }) {
         </div>
       ) : (
         <img 
-          src={image} 
+          src={imageUrl}
           alt={name} 
           className="product-image"
           onError={handleImageError}
@@ -44,7 +56,7 @@ function ProductCard({ id, name, price, image, category, description }) {
       <div className="product-info">
         <span className="product-category">{category}</span>
         <h3 className="product-name">{name}</h3>
-        <p className="product-price">{price.toLocaleString()} ₽</p>
+        <p className="product-price">{Number(price).toLocaleString()} ₽</p>
         <button 
           className="add-to-cart-btn"
           onClick={handleAddToCart}

@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\artza\OneDrive\Рабочий стол\спо\проект 1\flower-shop-frontend\backend\venv"
+VIRTUAL_ENV="C:\Users\admin\flower-shop\backend\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

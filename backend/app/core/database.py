@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Подключение к БД flower_shop_db (не postgres!)
-DATABASE_URL = "postgresql://postgres:admin123@10.192.213.26:5432/flower_shop_db"
+DATABASE_URL = "postgresql://postgres:admin123@localhost:5432/flower_shop_db"
 
 engine = create_engine(
     DATABASE_URL,
