@@ -2,26 +2,14 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
-import os
 
-load_dotenv()
+# Подключение к БД flower_shop_db (не postgres!)
+DATABASE_URL = "postgresql://postgres:admin123@localhost:5432/flower_shop_db"
 
-# Используем переменную из .env файла, а не жестко прописанный URL
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./flower_shop.db")
-
-# Для SQLite нужно добавить аргумент connect_args
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(
-        DATABASE_URL,
-        echo=True,
-        connect_args={"check_same_thread": False}  # Нужно для SQLite
-    )
-else:
-    engine = create_engine(
-        DATABASE_URL,
-        echo=True,
-    )
+engine = create_engine(
+    DATABASE_URL,
+    echo=True,  # Показывает SQL запросы в консоли (удобно для отладки)
+)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

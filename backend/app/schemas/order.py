@@ -29,7 +29,14 @@ class OrderCreate(BaseModel):
 
     @validator('delivery_date')
     def validate_delivery_date(cls, v):
-        if v < datetime.now():
+        # Делаем оба datetime наивными для сравнения
+        now = datetime.now()
+
+        # Если v содержит часовой пояс, убираем его
+        if v.tzinfo is not None:
+            v = v.replace(tzinfo=None)
+
+        if v < now:
             raise ValueError('Дата доставки не может быть в прошлом')
         return v
 
