@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { OrderProvider } from './context/OrderContext';
@@ -9,7 +9,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminPage from './pages/AdminPage';
 import CheckoutPage from './pages/CheckoutPage';
-import ProductPage from './pages/ProductPage';
+// import ProductPage from './pages/ProductPage'; // Удаляем этот импорт
 import ProductModal from './components/ProductModal/ProductModal';
 import OrderPage from './pages/OrderPage';
 import MyOrdersPage from './pages/MyOrdersPage';
@@ -21,18 +21,32 @@ function AppContent() {
   const { user, isAdmin, logout } = useAuth();
   const [modalProduct, setModalProduct] = useState(null);
   
-  // Проверяем, нужно ли показать модалку
+  // Слушаем событие открытия модального окна из ProductCard
+  useEffect(() => {
+    const handleOpenModal = (event) => {
+      setModalProduct(event.detail);
+    };
+
+    window.addEventListener('openProductModal', handleOpenModal);
+
+    return () => {
+      window.removeEventListener('openProductModal', handleOpenModal);
+    };
+  }, []);
+  
+  // Проверяем, нужно ли показать модалку (оставляем для обратной совместимости)
   React.useEffect(() => {
     if (location.state?.modal && location.state?.product) {
       setModalProduct(location.state.product);
-    } else {
-      setModalProduct(null);
     }
   }, [location]);
 
   const handleCloseModal = () => {
     setModalProduct(null);
-    navigate(location.pathname, { replace: true });
+    // Очищаем state, если он был
+    if (location.state?.modal) {
+      navigate(location.pathname, { replace: true });
+    }
   };
 
   const handleLogout = () => {
@@ -75,7 +89,7 @@ function AppContent() {
           <Route path='/register' element={<RegisterPage />} />
           <Route path='/admin' element={<AdminPage />} />
           <Route path='/checkout' element={<CheckoutPage />} />
-          <Route path='/product/:id' element={<ProductPage />} />
+          {/* Удаляем Route для /product/:id */}
           <Route path="/order/:id" element={<OrderPage />} />
           <Route path="/my-orders" element={<MyOrdersPage />} />
         </Routes>

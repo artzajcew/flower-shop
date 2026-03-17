@@ -1,13 +1,13 @@
 // frontend/src/components/ProductCard/ProductCard.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import './ProductCard.css';
 
 function ProductCard({ id, name, price, image, category, description }) {
   const { addToCart } = useCart();
-  const navigate = useNavigate();
   const [imgError, setImgError] = useState(false);
+  const [buttonText, setButtonText] = useState('В корзину');
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
   // Создаем объект product внутри компонента из пропсов
   const product = {
@@ -20,14 +20,25 @@ function ProductCard({ id, name, price, image, category, description }) {
   };
 
   const handleCardClick = () => {
-    navigate(`/product/${id}`, {
-      state: { modal: true, product }
-    });
+    // Получаем сохраненное состояние модального окна из родительского компонента
+    // через кастомное событие или через контекст
+    const event = new CustomEvent('openProductModal', { detail: product });
+    window.dispatchEvent(event);
   };
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
     addToCart(product);
+
+    // Меняем текст кнопки
+    setButtonText('Добавлено!');
+    setIsButtonDisabled(true);
+
+    // Возвращаем исходный текст через 3 секунды
+    setTimeout(() => {
+      setButtonText('В корзину');
+      setIsButtonDisabled(false);
+    }, 3000);
   };
 
   const handleImageError = () => {
@@ -42,7 +53,7 @@ function ProductCard({ id, name, price, image, category, description }) {
     <div className="product-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
       {imgError ? (
         <div className="product-image-placeholder">
-          <span>🖼️ {name.substring(0, 20)}</span>
+          <span>🖼 {name.substring(0, 20)}</span>
         </div>
       ) : (
         <img
@@ -57,11 +68,12 @@ function ProductCard({ id, name, price, image, category, description }) {
         <span className="product-category">{category}</span>
         <h3 className="product-name">{name}</h3>
         <p className="product-price">{Number(price).toLocaleString()} ₽</p>
-        <button 
-          className="add-to-cart-btn"
+        <button
+          className={`add-to-cart-btn ${isButtonDisabled ? 'added' : ''}`}
           onClick={handleAddToCart}
+          disabled={isButtonDisabled}
         >
-          В корзину
+          {buttonText}
         </button>
       </div>
     </div>

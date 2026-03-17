@@ -1,11 +1,9 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCart } from '../../context/CartContext'; // Исправлено: ../ → ../../
+import { useCart } from '../../context/CartContext';
 import './ProductModal.css';
 
 function ProductModal({ product, onClose }) {
   const { addToCart } = useCart();
-  const navigate = useNavigate();
 
   if (!product) return null;
 
@@ -13,29 +11,37 @@ function ProductModal({ product, onClose }) {
     addToCart(product);
   };
 
-  const handleClose = () => {
-    onClose();
-    navigate(-1);
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
   };
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
+    <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <button className="modal-close" onClick={handleClose}>×</button>
+        <button className="modal-close" onClick={onClose}>×</button>
         
         <div className="modal-grid">
           <div className="modal-image">
-            <img src={product.image} alt={product.name} />
+            <img 
+              src={product.image || '/placeholder.jpg'} 
+              alt={product.name}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = '/placeholder.jpg';
+              }}
+            />
           </div>
           
           <div className="modal-info">
             <span className="modal-category">{product.category}</span>
             <h2 className="modal-name">{product.name}</h2>
-            <p className="modal-price">{product.price.toLocaleString()} ₽</p>
+            <p className="modal-price">{Number(product.price).toLocaleString()} ₽</p>
             
             <div className="modal-description">
               <h3>Описание букета</h3>
-              <p>{product.description}</p>
+              <p>{product.description || 'Нет описания'}</p>
             </div>
             
             <div className="modal-actions">
