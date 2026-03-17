@@ -4,7 +4,7 @@ import {
   getOrder,
   createOrder as apiCreateOrder,
   updateOrderStatus as apiUpdateStatus,
-  getUserOrders  // Новый импорт
+  searchOrders as apiSearchOrders
 } from '../api/api';
 
 const OrderContext = createContext();
@@ -13,7 +13,6 @@ export function OrderProvider({ children }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Загружаем заказы (для админа)
   const loadOrders = async () => {
     try {
       setLoading(true);
@@ -26,25 +25,19 @@ export function OrderProvider({ children }) {
     }
   };
 
-  // Создание нового заказа
   const createOrder = async (orderData) => {
     try {
       setLoading(true);
-      console.log('OrderContext: создание заказа', orderData);
-
       const response = await apiCreateOrder(orderData);
-      console.log('OrderContext: ответ', response.data);
-
       return response.data.id;
     } catch (err) {
-      console.error('OrderContext: ошибка создания заказа:', err);
+      console.error('Ошибка создания заказа:', err);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Обновление статуса заказа (админ)
   const updateOrderStatus = async (orderId, newStatus, comment = '') => {
     try {
       setLoading(true);
@@ -58,7 +51,6 @@ export function OrderProvider({ children }) {
     }
   };
 
-  // Получение заказа по ID
   const getOrderById = async (orderId) => {
     try {
       const response = await getOrder(orderId);
@@ -69,21 +61,13 @@ export function OrderProvider({ children }) {
     }
   };
 
-  // Поиск заказов пользователя - ИСПРАВЛЕНО! Используем тот же эндпоинт, что и в Swagger
-  const getUserOrdersList = async () => {
+  const searchUserOrders = async (email, phone) => {
     try {
-      setLoading(true);
-      console.log('Получение заказов текущего пользователя');
-
-      const response = await getUserOrders();
-      console.log('Найденные заказы:', response.data);
-
+      const response = await apiSearchOrders(email, phone);
       return response.data;
     } catch (err) {
-      console.error('Ошибка получения заказов:', err);
+      console.error('Ошибка поиска заказов:', err);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -95,7 +79,7 @@ export function OrderProvider({ children }) {
       createOrder,
       updateOrderStatus,
       getOrderById,
-      getUserOrdersList  // Заменяем searchUserOrders на getUserOrdersList
+      searchUserOrders
     }}>
       {children}
     </OrderContext.Provider>

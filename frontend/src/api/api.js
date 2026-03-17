@@ -9,6 +9,34 @@ const api = axios.create({
   },
 });
 
+// Преобразуем данные прямо здесь
+api.interceptors.response.use(
+  (response) => {
+    // Если это список товаров
+    if (response.config.url?.includes('/products') && Array.isArray(response.data)) {
+      response.data = response.data.map(product => ({
+        ...product,
+        // Добавляем поле image для фронта
+        image: `/flowers/${product.id}.jpg`,
+        // Оставляем оригинальное поле на всякий случай
+        image_url: product.image_url
+      }));
+    }
+
+    // Если это один товар
+    if (response.config.url?.includes('/products') && response.data && response.data.id) {
+      response.data = {
+        ...response.data,
+        image: `/flowers/${response.data.id}.jpg`,
+      };
+    }
+
+    return response;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Интерцептор для токена
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -30,15 +58,14 @@ export const deleteProduct = (id) => api.delete(`/products/${id}`);
 // Категории
 export const getCategories = () => api.get('/categories');
 
-// Заказы - ИСПРАВЛЕНО!
-export const getOrders = () => api.get('/orders/');  // Добавил слеш
+// Заказы
+export const getOrders = () => api.get('/orders');
 export const getOrder = (id) => api.get(`/orders/${id}`);
-export const createOrder = (orderData) => api.post('/orders/', orderData);  // Добавил слеш
+export const createOrder = (orderData) => api.post('/orders', orderData);
 export const updateOrderStatus = (id, status, comment) =>
   api.patch(`/orders/${id}/status`, { status, comment });
-
-// Для страницы "Мои заказы" используем ТОТ ЖЕ ЭНДПОИНТ, ЧТО И В SWAGGER
-export const getUserOrders = () => api.get('/orders/');  // Просто получаем все заказы текущего пользователя
+export const searchOrders = (email, phone) =>
+  api.post('/orders/search', { email, phone });
 
 // Аутентификация
 export const login = (username, password) => {
@@ -50,15 +77,7 @@ export const login = (username, password) => {
   });
 };
 
-export const register = (userData) => {
-  return api.post('/auth/register', {
-    name: userData.name,
-    email: userData.email || null,
-    phone: userData.phone || null,
-    password: userData.password
-  });
-};
-
+export const register = (userData) => api.post('/auth/register', userData);
 export const getCurrentUser = () => api.get('/auth/me');
 
 export default api;

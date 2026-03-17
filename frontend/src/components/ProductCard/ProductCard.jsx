@@ -10,18 +10,18 @@ function ProductCard({ id, name, price, image, category, description }) {
   const [imgError, setImgError] = useState(false);
 
   // Создаем объект product внутри компонента из пропсов
-  const product = { 
-    id, 
-    name, 
-    price, 
-    image, 
-    category, 
-    description 
+  const product = {
+    id,
+    name,
+    price,
+    image,
+    category,
+    description
   };
 
   const handleCardClick = () => {
-    navigate(`/product/${id}`, { 
-      state: { modal: true, product } 
+    navigate(`/product/${id}`, {
+      state: { modal: true, product }
     });
   };
 
@@ -45,9 +45,9 @@ function ProductCard({ id, name, price, image, category, description }) {
           <span>🖼️ {name.substring(0, 20)}</span>
         </div>
       ) : (
-        <img 
+        <img
           src={imageUrl}
-          alt={name} 
+          alt={name}
           className="product-image"
           onError={handleImageError}
           loading="lazy"
