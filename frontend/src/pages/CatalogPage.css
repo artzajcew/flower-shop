@@ -189,3 +189,15 @@
     padding-top: 20px;
   }
 }
+
+.advanced-filters {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 10px;
+}
+
+.advanced-filters input{
+  border-radius: 10px;
+  border-color: #6C0B08;
+  text-align: center;
+}
