@@ -13,7 +13,8 @@ class OrderItemCreate(BaseModel):
 class OrderItemRead(BaseModel):
     good_id: int
     count: int
-    price: Decimal
+    # Убрали price из чтения, так как его нет в таблице
+    # Цена будет браться из самого заказа (total_price)
     product_name: Optional[str] = None
 
     class Config:

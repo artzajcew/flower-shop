@@ -63,8 +63,8 @@ def create_order(
         order_item = OrderItem(
             order_id=db_order.id,
             good_id=item.good_id,
-            count=item.count,
-            price=product.price
+            count=item.count
+            # Убрали поле price, так как его нет в таблице
         )
         db.add(order_item)
         product.quantity -= item.count

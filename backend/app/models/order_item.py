@@ -11,7 +11,7 @@ class OrderItem(Base):
     order_id = Column(Integer, ForeignKey("orders.id"), primary_key=True)
     good_id = Column(Integer, ForeignKey("products.id"), primary_key=True)
     count = Column(Integer, nullable=False)
-    price = Column(Numeric(10, 2), nullable=False)
+    # Убрали поле price, так как его нет в таблице
 
     # Связи
     order = relationship("Order", back_populates="items")
