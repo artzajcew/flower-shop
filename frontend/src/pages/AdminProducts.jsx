@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getProducts, createProduct, updateProduct, deleteProduct } from '../api/api';
+import { getProducts, getCategories, createProduct, updateProduct, deleteProduct } from '../api/api';
 import './AdminProducts.css';
 
 function AdminProducts() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -17,29 +18,41 @@ function AdminProducts() {
     quantity: 0
   });
 
-  // Загружаем товары
   useEffect(() => {
-    loadProducts();
+    loadData();
   }, []);
 
-  const loadProducts = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const response = await getProducts();
-      setProducts(response.data);
+      const [productsRes, categoriesRes] = await Promise.all([
+        getProducts(),
+        getCategories()
+      ]);
+      
+      setProducts(productsRes.data);
+      setCategories(categoriesRes.data);
     } catch (err) {
-      console.error('Ошибка загрузки товаров:', err);
-      alert('Ошибка загрузки товаров');
+      console.error('Ошибка загрузки:', err);
+      alert('Ошибка загрузки данных');
     } finally {
       setLoading(false);
     }
+  };
+
+  const getCategoryName = (categoryId) => {
+    if (!categoryId) return 'Без категории';
+    const category = categories.find(c => c.id === categoryId);
+    return category ? category.name : `ID: ${categoryId}`;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'price' || name === 'quantity' ? Number(value) : value
+      [name]: name === 'price' || name === 'quantity' || name === 'category_id' 
+        ? Number(value) 
+        : value
     }));
   };
 
@@ -57,9 +70,26 @@ function AdminProducts() {
     setShowForm(false);
   };
 
+  // Функция для закрытия по клику на оверлей
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      if (window.confirm('Закрыть форму? Несохраненные данные будут потеряны')) {
+        resetForm();
+      }
+    }
+  };
+
   const handleAdd = () => {
     setEditingProduct(null);
-    resetForm();
+    setFormData({
+      name: '',
+      price: '',
+      category_id: '',
+      image: '',
+      description: '',
+      code: '',
+      quantity: 0
+    });
     setShowForm(true);
   };
 
@@ -94,7 +124,7 @@ function AdminProducts() {
         alert('Товар добавлен!');
       }
       
-      await loadProducts();
+      await loadData();
       resetForm();
     } catch (err) {
       console.error('Ошибка сохранения:', err);
@@ -106,7 +136,7 @@ function AdminProducts() {
     if (window.confirm('Вы уверены, что хотите удалить этот товар?')) {
       try {
         await deleteProduct(id);
-        await loadProducts();
+        await loadData();
         alert('Товар удален!');
       } catch (err) {
         console.error('Ошибка удаления:', err);
@@ -128,8 +158,9 @@ function AdminProducts() {
       </div>
 
       {showForm && (
-        <div className="modal-overlay">
-          <div className="modal-content admin-form">
+        <div className="modal-overlay" onClick={handleOverlayClick}>
+          <div className="modal-content admin-form" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={resetForm}>×</button>
             <h2>{editingProduct ? 'Редактировать' : 'Добавить'} букет</h2>
             
             <form onSubmit={handleSave}>
@@ -177,14 +208,20 @@ function AdminProducts() {
               </div>
 
               <div className="form-group">
-                <label>ID категории:</label>
-                <input
-                  type="number"
+                <label>Категория:</label>
+                <select
                   name="category_id"
                   value={formData.category_id}
                   onChange={handleChange}
-                  placeholder="1, 2, 3..."
-                />
+                  required
+                >
+                  <option value="">Выберите категорию</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group">
@@ -244,15 +281,19 @@ function AdminProducts() {
                 <td>{product.id}</td>
                 <td>
                   <img 
-                    src={product.image} 
+                    src={product.image || '/placeholder.jpg'} 
                     alt={product.name} 
                     className="table-image"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/placeholder.jpg';
+                    }}
                   />
                 </td>
-                <td>{product.name.substring(0, 50)}...</td>
-                <td>{product.category?.name || product.category_id}</td>
+                <td>{product.name?.substring(0, 50)}...</td>
+                <td>{getCategoryName(product.category_id)}</td>
                 <td>{product.price} ₽</td>
-                <td>{product.quantity > 0 ? 'Да' : 'Нет'}</td>
+                <td>{product.quantity || 0}</td>
                 <td className="actions">
                   <button 
                     className="edit-btn"
