@@ -103,7 +103,7 @@ const orderData = {
         <div className="checkout-form">
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>ФИО *</label>
+              <label>ФИО получателя *</label>
               <input
                 type="text"
                 name="fullName"
@@ -116,6 +116,7 @@ const orderData = {
               {errors.fullName && <span className="error-message">{errors.fullName}</span>}
             </div>
 
+            
             <div className="form-group">
               <label>Email</label>
               <input
@@ -131,7 +132,7 @@ const orderData = {
             </div>
 
             <div className="form-group">
-              <label>Номер телефона *</label>
+              <label>Номер телефона получателя*</label>
               <input
                 type="tel"
                 name="phone"
