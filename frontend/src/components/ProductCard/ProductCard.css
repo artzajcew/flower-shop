@@ -71,3 +71,128 @@
   box-shadow: 0 2px 8px rgba(112, 23, 99, 0.4);
   margin-top: auto;
 }
+
+.auth-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.auth-modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  max-width: 400px;
+  width: 90%;
+  position: relative;
+  text-align: center;
+  animation: slideIn 0.3s ease;
+}
+
+.auth-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+.auth-modal-close:hover {
+  color: #333;
+}
+
+.auth-modal-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.auth-modal-content h3 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.auth-modal-content p {
+  color: #666;
+  margin-bottom: 25px;
+  line-height: 1.5;
+}
+
+.auth-modal-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.auth-modal-login {
+  background: #6C0B08;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s;
+}
+
+.auth-modal-login:hover {
+  background: #8B0D08;
+}
+
+.auth-modal-register {
+  background: white;
+  color: #6C0B08;
+  border: 2px solid #6C0B08;
+  padding: 12px 25px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+.auth-modal-register:hover {
+  background: #f8f8f8;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Для мобильных */
+@media (max-width: 480px) {
+  .auth-modal-content {
+    padding: 20px;
+  }
+  
+  .auth-modal-buttons {
+    flex-direction: column;
+  }
+  
+  .auth-modal-content h3 {
+    font-size: 20px;
+  }
+}
