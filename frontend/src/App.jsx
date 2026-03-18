@@ -9,7 +9,6 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminPage from './pages/AdminPage';
 import CheckoutPage from './pages/CheckoutPage';
-// import ProductPage from './pages/ProductPage'; // Удаляем этот импорт
 import ProductModal from './components/ProductModal/ProductModal';
 import OrderPage from './pages/OrderPage';
 import MyOrdersPage from './pages/MyOrdersPage';
@@ -20,8 +19,7 @@ function AppContent() {
   const navigate = useNavigate();
   const { user, isAdmin, logout } = useAuth();
   const [modalProduct, setModalProduct] = useState(null);
-  
-  // Слушаем событие открытия модального окна из ProductCard
+
   useEffect(() => {
     const handleOpenModal = (event) => {
       setModalProduct(event.detail);
@@ -33,8 +31,7 @@ function AppContent() {
       window.removeEventListener('openProductModal', handleOpenModal);
     };
   }, []);
-  
-  // Проверяем, нужно ли показать модалку (оставляем для обратной совместимости)
+
   React.useEffect(() => {
     if (location.state?.modal && location.state?.product) {
       setModalProduct(location.state.product);
@@ -43,7 +40,6 @@ function AppContent() {
 
   const handleCloseModal = () => {
     setModalProduct(null);
-    // Очищаем state, если он был
     if (location.state?.modal) {
       navigate(location.pathname, { replace: true });
     }
@@ -54,30 +50,78 @@ function AppContent() {
     navigate('/');
   };
 
+  // Функция для определения активной ссылки
+  const isActive = (path) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
     <div className="app">
       <header className='header'>
         <nav className='nav'>
-          <Link to='/' className='nav-link nav-link-9'>More Than Flowers</Link>
-          <Link to='/' className='nav-link nav-link-1'>Каталог</Link>
-          <Link to='/cart' className='nav-link nav-link-1'>
-            Корзина
+          {/* Логотип слева - с отдельным классом */}
+          <Link to='/' className='nav-logo'>
+            More Than Flowers
           </Link>
-          
-          {user ? (
-            <>
-              <Link to='/my-orders' className='nav-link nav-link-1'>Мои заказы</Link>
-              {isAdmin && <Link to='/admin' className='nav-link nav-link-1'>Админ</Link>}
-              <button onClick={handleLogout} className='nav-link nav-link-logout'>
+
+          {/* Группа правых кнопок */}
+          <div className="nav-right">
+            {/* Каталог - есть у всех */}
+            <Link
+              to='/'
+              className={`nav-link ${isActive('/') && !location.pathname.startsWith('/admin') ? 'active' : ''}`}
+            >
+              Каталог
+            </Link>
+
+            {/* Для обычных пользователей */}
+            {!isAdmin && (
+              <>
+                <Link
+                  to='/cart'
+                  className={`nav-link ${isActive('/cart') ? 'active' : ''}`}
+                >
+                  Корзина
+                </Link>
+                <Link
+                  to='/my-orders'
+                  className={`nav-link ${isActive('/my-orders') ? 'active' : ''}`}
+                >
+                  Заказы
+                </Link>
+              </>
+            )}
+
+            {/* Для админа */}
+            {isAdmin && (
+              <Link
+                to='/admin'
+                className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
+              >
+                Панель управления
+              </Link>
+            )}
+
+            {/* Кнопка входа/выхода */}
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className='nav-link'
+              >
                 Выйти
               </button>
-            </>
-          ) : (
-            <>
-              <Link to='/login' className='nav-link nav-link-1'>Вход</Link>
-              <Link to='/my-orders' className='nav-link nav-link-1'>Заказы</Link>
-            </>
-          )}
+            ) : (
+              <Link
+                to='/login'
+                className={`nav-link ${isActive('/login') ? 'active' : ''}`}
+              >
+                Вход
+              </Link>
+            )}
+          </div>
         </nav>
       </header>
 
@@ -89,7 +133,6 @@ function AppContent() {
           <Route path='/register' element={<RegisterPage />} />
           <Route path='/admin' element={<AdminPage />} />
           <Route path='/checkout' element={<CheckoutPage />} />
-          {/* Удаляем Route для /product/:id */}
           <Route path="/order/:id" element={<OrderPage />} />
           <Route path="/my-orders" element={<MyOrdersPage />} />
         </Routes>
@@ -103,7 +146,7 @@ function AppContent() {
             <p>Создаем букеты для ваших особенных моментов</p>
             <p>Ежедневно с 9:00 до 21:00</p>
           </div>
-          
+
           <div className="footer-column">
             <h4>Каталог</h4>
             <ul>
@@ -113,7 +156,7 @@ function AppContent() {
               <li><a href="/">Свадебные букеты</a></li>
             </ul>
           </div>
-          
+
           <div className="footer-column">
             <h4>Информация</h4>
             <ul>
@@ -123,7 +166,7 @@ function AppContent() {
               <li><a href="/">Блог</a></li>
             </ul>
           </div>
-          
+
           <div className="footer-column">
             <h4>Контакты</h4>
             <ul>
@@ -136,13 +179,12 @@ function AppContent() {
             </ul>
           </div>
         </div>
-        
+
         <div className="footer-bottom">
           <p>© 2026 More Than Flowers. Все права защищены.</p>
         </div>
       </footer>
 
-      {/* Модальное окно */}
       {modalProduct && (
         <ProductModal 
           product={modalProduct}
