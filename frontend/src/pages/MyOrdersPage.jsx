@@ -6,16 +6,17 @@ import './MyOrdersPage.css';
 
 function MyOrdersPage() {
   const navigate = useNavigate();
-  const { getUserOrdersList, loading } = useOrders();
+  const { getUserOrdersList, loading } = useOrders(); // Теперь функция есть
   const { user } = useAuth();
   const [userOrders, setUserOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [error, setError] = useState('');
 
-  // Автоматически загружаем заказы при загрузке страницы
   useEffect(() => {
     if (user) {
       loadUserOrders();
+    } else {
+      setLoadingOrders(false);
     }
   }, [user]);
 

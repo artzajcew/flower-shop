@@ -67,9 +67,9 @@ function OrderPage() {
   return (
     <div className="order-page">
       <h1>Заказ #{order.id}</h1>
-      
+
       <div className="order-status">
-        <div 
+        <div
           className="status-badge"
           style={{ backgroundColor: getStatusColor(order.status) }}
         >
