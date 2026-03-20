@@ -17,7 +17,7 @@ import './App.css';
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, loading: authLoading, logout } = useAuth();
   const [modalProduct, setModalProduct] = useState(null);
 
   useEffect(() => {
@@ -58,6 +58,94 @@ function AppContent() {
     return location.pathname.startsWith(path);
   };
 
+  // Если идет загрузка auth данных, показываем заглушку или не рендерим навигацию
+  if (authLoading) {
+    return (
+      <div className="app">
+        <header className='header'>
+          <nav className='nav'>
+            <Link to='/' className='nav-logo'>
+              More Than Flowers
+            </Link>
+            <div className="nav-right">
+              <div className="loading-nav">Загрузка...</div>
+            </div>
+          </nav>
+        </header>
+        <main className='content'>
+          <div className="loading">Загрузка...</div>
+        </main>
+      </div>
+    );
+  }
+
+  // Определяем, какие ссылки показывать в зависимости от роли пользователя
+  const renderNavLinks = () => {
+    // Для админа
+    if (user && isAdmin) {
+      return (
+        <>
+          <Link
+            to='/'
+            className={`nav-link ${isActive('/') ? 'active' : ''}`}
+          >
+            Каталог
+          </Link>
+          <Link
+            to='/admin'
+            className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
+          >
+            Панель управления
+          </Link>
+        </>
+      );
+    }
+
+    // Для авторизованного обычного пользователя
+    if (user && !isAdmin) {
+      return (
+        <>
+          <Link
+            to='/'
+            className={`nav-link ${isActive('/') && !location.pathname.startsWith('/admin') ? 'active' : ''}`}
+          >
+            Каталог
+          </Link>
+          <Link
+            to='/cart'
+            className={`nav-link ${isActive('/cart') ? 'active' : ''}`}
+          >
+            Корзина
+          </Link>
+          <Link
+            to='/my-orders'
+            className={`nav-link ${isActive('/my-orders') ? 'active' : ''}`}
+          >
+            Заказы
+          </Link>
+        </>
+      );
+    }
+
+    // Для неавторизованного пользователя (гостя)
+    return (
+      <>
+        <Link
+          to='/'
+          className={`nav-link ${isActive('/') ? 'active' : ''}`}
+        >
+          Каталог
+        </Link>
+        <Link
+          to='/cart'
+          className={`nav-link ${isActive('/cart') ? 'active' : ''}`}
+        >
+          Корзина
+        </Link>
+      </>
+    );
+  };
+
   return (
     <div className="app">
       <header className='header'>
@@ -69,47 +157,13 @@ function AppContent() {
 
           {/* Группа правых кнопок */}
           <div className="nav-right">
-            {/* Каталог - есть у всех */}
-            <Link
-              to='/'
-              className={`nav-link ${isActive('/') && !location.pathname.startsWith('/admin') ? 'active' : ''}`}
-            >
-              Каталог
-            </Link>
-
-            {/* Для обычных пользователей */}
-            {!isAdmin && (
-              <>
-                <Link
-                  to='/cart'
-                  className={`nav-link ${isActive('/cart') ? 'active' : ''}`}
-                >
-                  Корзина
-                </Link>
-                <Link
-                  to='/my-orders'
-                  className={`nav-link ${isActive('/my-orders') ? 'active' : ''}`}
-                >
-                  Заказы
-                </Link>
-              </>
-            )}
-
-            {/* Для админа */}
-            {isAdmin && (
-              <Link
-                to='/admin'
-                className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
-              >
-                Панель управления
-              </Link>
-            )}
+            {renderNavLinks()}
 
             {/* Кнопка входа/выхода */}
             {user ? (
               <button
                 onClick={handleLogout}
-                className='nav-link'
+                className='nav-link logout-btn'
               >
                 Выйти
               </button>
