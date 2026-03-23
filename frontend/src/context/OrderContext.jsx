@@ -25,14 +25,12 @@ export function OrderProvider({ children }) {
     }
   };
 
-  // НОВАЯ ФУНКЦИЯ: получает заказы текущего пользователя
+  // Функция для получения заказов текущего пользователя
   const getUserOrdersList = async () => {
     try {
       setLoading(true);
       const response = await getOrders();
-      // API возвращает все заказы, но предполагается, 
-      // что бэкенд фильтрует их по текущему пользователю
-      // на основе JWT токена
+      // API фильтрует заказы по текущему пользователю на основе JWT
       return response.data;
     } catch (err) {
       console.error('Ошибка загрузки заказов пользователя:', err);
@@ -59,7 +57,7 @@ export function OrderProvider({ children }) {
     try {
       setLoading(true);
       await apiUpdateStatus(orderId, newStatus, comment);
-      await loadOrders();
+      await loadOrders(); // Обновляем список после изменения статуса
     } catch (err) {
       console.error('Ошибка обновления статуса:', err);
       throw err;
@@ -93,7 +91,7 @@ export function OrderProvider({ children }) {
       orders,
       loading,
       loadOrders,
-      getUserOrdersList, // ДОБАВЛЯЕМ НОВУЮ ФУНКЦИЮ
+      getUserOrdersList, // Добавляем в провайдер
       createOrder,
       updateOrderStatus,
       getOrderById,
