@@ -1,3 +1,4 @@
+// frontend/src/context/OrderContext.jsx
 import React, { createContext, useState, useContext } from 'react';
 import {
   getOrders,
@@ -17,21 +18,46 @@ export function OrderProvider({ children }) {
     try {
       setLoading(true);
       const response = await getOrders();
-      setOrders(response.data);
+      // Нормализуем данные заказов
+      const normalizedOrders = response.data.map(order => normalizeOrder(order));
+      setOrders(normalizedOrders);
+      return normalizedOrders;
     } catch (err) {
       console.error('Ошибка загрузки заказов:', err);
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Функция для получения заказов текущего пользователя
+  // Функция нормализации данных заказа
+  const normalizeOrder = (order) => {
+    return {
+      id: order.id,
+      status: order.status,
+      order_date: order.order_date || order.created_at || order.createdAt,
+      total_price: order.total_price || order.total,
+      full_name: order.full_name || order.recipient_name,
+      email: order.email,
+      phone: order.phone || order.recipient_phone,
+      delivery_method: order.delivery_method,
+      delivery_address: order.delivery_address,
+      items: (order.items || []).map(item => ({
+        ...item,
+        product_name: item.product_name || item.name,
+        count: item.count || item.quantity
+      })),
+      history: order.history || []
+    };
+  };
+
   const getUserOrdersList = async () => {
     try {
       setLoading(true);
       const response = await getOrders();
       // API фильтрует заказы по текущему пользователю на основе JWT
-      return response.data;
+      const normalizedOrders = response.data.map(order => normalizeOrder(order));
+      return normalizedOrders;
     } catch (err) {
       console.error('Ошибка загрузки заказов пользователя:', err);
       throw err;
@@ -57,7 +83,7 @@ export function OrderProvider({ children }) {
     try {
       setLoading(true);
       await apiUpdateStatus(orderId, newStatus, comment);
-      await loadOrders(); // Обновляем список после изменения статуса
+      await loadOrders();
     } catch (err) {
       console.error('Ошибка обновления статуса:', err);
       throw err;
@@ -69,7 +95,7 @@ export function OrderProvider({ children }) {
   const getOrderById = async (orderId) => {
     try {
       const response = await getOrder(orderId);
-      return response.data;
+      return normalizeOrder(response.data);
     } catch (err) {
       console.error('Ошибка получения заказа:', err);
       throw err;
@@ -79,7 +105,7 @@ export function OrderProvider({ children }) {
   const searchUserOrders = async (email, phone) => {
     try {
       const response = await apiSearchOrders(email, phone);
-      return response.data;
+      return response.data.map(order => normalizeOrder(order));
     } catch (err) {
       console.error('Ошибка поиска заказов:', err);
       throw err;
@@ -91,7 +117,7 @@ export function OrderProvider({ children }) {
       orders,
       loading,
       loadOrders,
-      getUserOrdersList, // Добавляем в провайдер
+      getUserOrdersList,
       createOrder,
       updateOrderStatus,
       getOrderById,

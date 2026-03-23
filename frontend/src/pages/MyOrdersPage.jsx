@@ -1,3 +1,4 @@
+// frontend/src/pages/MyOrdersPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrders } from '../context/OrderContext';
@@ -6,7 +7,7 @@ import './MyOrdersPage.css';
 
 function MyOrdersPage() {
   const navigate = useNavigate();
-  const { getUserOrdersList, loading } = useOrders(); // Теперь функция есть
+  const { getUserOrdersList, loading } = useOrders();
   const { user } = useAuth();
   const [userOrders, setUserOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -44,7 +45,12 @@ function MyOrdersPage() {
       'В сборке': 'В сборке',
       'Доставляется': 'Доставляется',
       'Выполнен': 'Выполнен',
-      'Отменен': 'Отменен'
+      'Отменен': 'Отменен',
+      'processing': 'В обработке',
+      'confirmed': 'Подтвержден',
+      'shipped': 'Отправлен',
+      'delivered': 'Доставлен',
+      'cancelled': 'Отменен'
     };
     return statusMap[status] || status;
   };
@@ -55,7 +61,12 @@ function MyOrdersPage() {
       'В сборке': '#17a2b8',
       'Доставляется': '#007bff',
       'Выполнен': '#28a745',
-      'Отменен': '#dc3545'
+      'Отменен': '#dc3545',
+      'processing': '#ffc107',
+      'confirmed': '#17a2b8',
+      'shipped': '#007bff',
+      'delivered': '#28a745',
+      'cancelled': '#dc3545'
     };
     return colorMap[status] || '#6c757d';
   };
@@ -113,43 +124,55 @@ function MyOrdersPage() {
           <>
             <h2>Всего заказов: {userOrders.length}</h2>
             <div className="orders-list">
-              {userOrders.map(order => (
-                <div key={order.id} className="order-card">
-                  <div className="order-header">
-                    <h3>Заказ #{order.id}</h3>
-                    <span
-                      className="status-badge"
-                      style={{ backgroundColor: getStatusColor(order.status) }}
+              {userOrders.map(order => {
+                // Получаем сумму заказа
+                const totalPrice = order.total_price || order.total || 0;
+                // Получаем количество товаров
+                const itemsCount = order.items?.length || 0;
+
+                return (
+                  <div key={order.id} className="order-card">
+                    <div className="order-header">
+                      <h3>Заказ #{order.id}</h3>
+                      <span
+                        className="status-badge"
+                        style={{ backgroundColor: getStatusColor(order.status) }}
+                      >
+                        {getStatusText(order.status)}
+                      </span>
+                    </div>
+
+                    <div className="order-info">
+                      <p><strong>Дата:</strong> {formatDate(order.order_date)}</p>
+                      <p><strong>Сумма:</strong> {totalPrice.toLocaleString()} ₽</p>
+                      <p><strong>Товаров:</strong> {itemsCount}</p>
+                    </div>
+
+                    <div className="order-items-preview">
+                      <strong>Товары:</strong>
+                      {order.items?.slice(0, 2).map((item, idx) => {
+                        const itemName = item.product_name || item.name;
+                        const quantity = item.count || item.quantity;
+                        return (
+                          <div key={idx} className="preview-item">
+                            {itemName} x{quantity}
+                          </div>
+                        );
+                      })}
+                      {order.items?.length > 2 && (
+                        <div className="more-items">и еще {order.items.length - 2} товара(ов)</div>
+                      )}
+                    </div>
+
+                    <button
+                      className="details-btn"
+                      onClick={() => navigate(`/order/${order.id}`)}
                     >
-                      {getStatusText(order.status)}
-                    </span>
+                      Подробнее
+                    </button>
                   </div>
-
-                  <div className="order-info">
-                    <p><strong>Дата:</strong> {formatDate(order.order_date)}</p>
-                    <p><strong>Сумма:</strong> {order.total_price} ₽</p>
-                    <p><strong>Товаров:</strong> {order.items?.length || 0}</p>
-                  </div>
-
-                  <div className="order-items-preview">
-                    {order.items?.slice(0, 2).map((item, idx) => (
-                      <div key={idx} className="preview-item">
-                        {item.product_name || `Товар #${item.good_id}`} x{item.count}
-                      </div>
-                    ))}
-                    {order.items?.length > 2 && (
-                      <div className="more-items">и еще {order.items.length - 2} товара(ов)</div>
-                    )}
-                  </div>
-
-                  <button
-                    className="details-btn"
-                    onClick={() => navigate(`/order/${order.id}`)}
-                  >
-                    Подробнее
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}

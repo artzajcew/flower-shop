@@ -1,18 +1,21 @@
+// frontend/src/pages/CheckoutPage.jsx
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useOrders } from '../context/OrderContext';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './CheckoutPage.css';
 
 function CheckoutPage() {
   const { cart, totalPrice, clearCart } = useCart();
   const { createOrder, loading } = useOrders();
+  const { user } = useAuth(); // Получаем текущего пользователя
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
+    fullName: user?.username || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
     deliveryMethod: 'pickup',
     address: '',
     paymentMethod: 'card'
@@ -36,31 +39,33 @@ function CheckoutPage() {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Введите ФИО';
     }
-    
-    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Введите email';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Введите корректный email';
     }
-    
+
     if (!formData.phone.trim()) {
       newErrors.phone = 'Введите номер телефона';
     } else if (!/^\+?[0-9\s-()]+$/.test(formData.phone)) {
       newErrors.phone = 'Введите корректный номер телефона';
     }
-    
+
     if (formData.deliveryMethod === 'delivery' && !formData.address.trim()) {
       newErrors.address = 'Введите адрес доставки';
     }
-    
+
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -68,27 +73,32 @@ function CheckoutPage() {
     }
 
     setSubmitting(true);
-    
+
     try {
-      // Подготавливаем данные для заказа
-      // В функции handleSubmit, замените создание orderData на:
+      // Формируем данные заказа в формате, который ожидает бэкенд
+      const orderData = {
+        recipient_name: formData.fullName,
+        recipient_phone: formData.phone,
+        email: formData.email, // Добавляем email
+        delivery_address: formData.deliveryMethod === 'delivery' ? formData.address : 'Самовывоз',
+        delivery_method: formData.deliveryMethod,
+        payment_method: formData.paymentMethod,
+        delivery_date: new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0],
+        items: cart.map(item => ({
+          good_id: item.id,
+          count: item.quantity,
+          price: item.price,
+          name: item.name // Добавляем название для надежности
+        }))
+      };
 
-const orderData = {
-  recipient_name: formData.fullName,
-  recipient_phone: formData.phone,
-  delivery_address: formData.deliveryMethod === 'delivery' ? formData.address : 'Самовывоз',
-  delivery_date: new Date(Date.now() + 24*60*60*1000).toISOString(), // завтра
-  items: cart.map(item => ({
-    good_id: item.id,           // было id, нужно good_id
-    count: item.quantity        // было quantity, нужно count
-  }))
-};
+      console.log('Отправляем заказ:', JSON.stringify(orderData, null, 2));
 
-      
       const orderId = await createOrder(orderData);
       clearCart();
       navigate(`/order/${orderId}`);
     } catch (err) {
+      console.error('Ошибка:', err);
       alert('Ошибка при создании заказа. Попробуйте позже.');
     } finally {
       setSubmitting(false);
@@ -98,7 +108,7 @@ const orderData = {
   return (
     <div className="checkout-page">
       <h1>Оформление заказа</h1>
-      
+
       <div className="checkout-container">
         <div className="checkout-form">
           <form onSubmit={handleSubmit}>
@@ -116,9 +126,8 @@ const orderData = {
               {errors.fullName && <span className="error-message">{errors.fullName}</span>}
             </div>
 
-            
             <div className="form-group">
-              <label>Email</label>
+              <label>Email *</label>
               <input
                 type="email"
                 name="email"
@@ -132,7 +141,7 @@ const orderData = {
             </div>
 
             <div className="form-group">
-              <label>Номер телефона получателя*</label>
+              <label>Номер телефона получателя *</label>
               <input
                 type="tel"
                 name="phone"
@@ -217,12 +226,12 @@ const orderData = {
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              className="pay-btn" 
+            <button
+              type="submit"
+              className="pay-btn"
               disabled={submitting || loading}
             >
-              {submitting ? 'Оформление...' : `Оформить заказ ${totalPrice} ₽`}
+              {submitting ? 'Оформление...' : `Оформить заказ ${totalPrice.toLocaleString()} ₽`}
             </button>
           </form>
         </div>
@@ -233,13 +242,13 @@ const orderData = {
             {cart.map(item => (
               <div key={item.id} className="order-item">
                 <span className="item-name">{item.name} x{item.quantity}</span>
-                <span className="item-price">{item.price * item.quantity} ₽</span>
+                <span className="item-price">{(item.price * item.quantity).toLocaleString()} ₽</span>
               </div>
             ))}
           </div>
           <div className="order-total">
             <span>Итого:</span>
-            <span>{totalPrice} ₽</span>
+            <span>{totalPrice.toLocaleString()} ₽</span>
           </div>
         </div>
       </div>
