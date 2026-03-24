@@ -9,16 +9,14 @@ import './CheckoutPage.css';
 function CheckoutPage() {
   const { cart, totalPrice, clearCart } = useCart();
   const { createOrder, loading } = useOrders();
-  const { user } = useAuth(); // Получаем текущего пользователя
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     fullName: user?.username || '',
-    email: user?.email || '',
     phone: user?.phone || '',
     deliveryMethod: 'pickup',
-    address: '',
-    paymentMethod: 'card'
+    address: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -42,12 +40,6 @@ function CheckoutPage() {
 
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Введите ФИО';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Введите email';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Введите корректный email';
     }
 
     if (!formData.phone.trim()) {
@@ -75,20 +67,17 @@ function CheckoutPage() {
     setSubmitting(true);
 
     try {
-      // Формируем данные заказа в формате, который ожидает бэкенд
       const orderData = {
         recipient_name: formData.fullName,
         recipient_phone: formData.phone,
-        email: formData.email, // Добавляем email
         delivery_address: formData.deliveryMethod === 'delivery' ? formData.address : 'Самовывоз',
         delivery_method: formData.deliveryMethod,
-        payment_method: formData.paymentMethod,
         delivery_date: new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0],
         items: cart.map(item => ({
           good_id: item.id,
           count: item.quantity,
           price: item.price,
-          name: item.name // Добавляем название для надежности
+          name: item.name
         }))
       };
 
@@ -99,7 +88,8 @@ function CheckoutPage() {
       navigate(`/order/${orderId}`);
     } catch (err) {
       console.error('Ошибка:', err);
-      alert('Ошибка при создании заказа. Попробуйте позже.');
+      const errorMessage = err.response?.data?.detail || 'Ошибка при создании заказа. Попробуйте позже.';
+      alert(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -124,20 +114,6 @@ function CheckoutPage() {
                 disabled={submitting}
               />
               {errors.fullName && <span className="error-message">{errors.fullName}</span>}
-            </div>
-
-            <div className="form-group">
-              <label>Email *</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="ivan@example.com"
-                className={errors.email ? 'error' : ''}
-                disabled={submitting}
-              />
-              {errors.email && <span className="error-message">{errors.email}</span>}
             </div>
 
             <div className="form-group">
@@ -197,34 +173,6 @@ function CheckoutPage() {
                 {errors.address && <span className="error-message">{errors.address}</span>}
               </div>
             )}
-
-            <div className="form-group">
-              <label>Способ оплаты</label>
-              <div className="payment-options">
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="card"
-                    checked={formData.paymentMethod === 'card'}
-                    onChange={handleChange}
-                    disabled={submitting}
-                  />
-                  Картой онлайн
-                </label>
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash"
-                    checked={formData.paymentMethod === 'cash'}
-                    onChange={handleChange}
-                    disabled={submitting}
-                  />
-                  Наличными при получении
-                </label>
-              </div>
-            </div>
 
             <button
               type="submit"

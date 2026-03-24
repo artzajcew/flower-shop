@@ -18,7 +18,6 @@ export function OrderProvider({ children }) {
     try {
       setLoading(true);
       const response = await getOrders();
-      // Нормализуем данные заказов
       const normalizedOrders = response.data.map(order => normalizeOrder(order));
       setOrders(normalizedOrders);
       return normalizedOrders;
@@ -32,21 +31,60 @@ export function OrderProvider({ children }) {
 
   // Функция нормализации данных заказа
   const normalizeOrder = (order) => {
+    console.log('Исходный заказ для нормализации:', order);
+
+    // Нормализуем товары в заказе
+    const normalizedItems = (order.items || []).map(item => {
+      // Логируем исходный товар
+      console.log('Исходный товар:', item);
+
+      // Пытаемся найти цену в любом поле
+      let price = 0;
+      if (item.price !== undefined && item.price !== null) {
+        price = Number(item.price);
+      } else if (item.unit_price !== undefined && item.unit_price !== null) {
+        price = Number(item.unit_price);
+      } else if (item.product_price !== undefined && item.product_price !== null) {
+        price = Number(item.product_price);
+      } else if (item.cost !== undefined && item.cost !== null) {
+        price = Number(item.cost);
+      } else if (item.total_price && item.count) {
+        // Если есть общая сумма и количество, вычисляем цену
+        price = Number(item.total_price) / Number(item.count);
+      }
+
+      // Пытаемся найти название
+      const name = item.product_name || item.name || item.good_name || item.title;
+
+      // Пытаемся найти количество
+      const quantity = item.count || item.quantity || 1;
+
+      const normalizedItem = {
+        id: item.id || item.good_id || item.product_id,
+        name: name,
+        product_name: name,
+        count: quantity,
+        quantity: quantity,
+        price: price,
+        unit_price: price,
+        // Сохраняем оригинальные данные на всякий случай
+        original: item
+      };
+
+      console.log('Нормализованный товар:', normalizedItem);
+      return normalizedItem;
+    });
+
     return {
       id: order.id,
       status: order.status,
       order_date: order.order_date || order.created_at || order.createdAt,
       total_price: order.total_price || order.total,
       full_name: order.full_name || order.recipient_name,
-      email: order.email,
       phone: order.phone || order.recipient_phone,
       delivery_method: order.delivery_method,
       delivery_address: order.delivery_address,
-      items: (order.items || []).map(item => ({
-        ...item,
-        product_name: item.product_name || item.name,
-        count: item.count || item.quantity
-      })),
+      items: normalizedItems,
       history: order.history || []
     };
   };
@@ -55,7 +93,6 @@ export function OrderProvider({ children }) {
     try {
       setLoading(true);
       const response = await getOrders();
-      // API фильтрует заказы по текущему пользователю на основе JWT
       const normalizedOrders = response.data.map(order => normalizeOrder(order));
       return normalizedOrders;
     } catch (err) {
@@ -95,7 +132,10 @@ export function OrderProvider({ children }) {
   const getOrderById = async (orderId) => {
     try {
       const response = await getOrder(orderId);
-      return normalizeOrder(response.data);
+      console.log('API ответ getOrder:', response.data);
+      const normalizedOrder = normalizeOrder(response.data);
+      console.log('Нормализованный заказ:', normalizedOrder);
+      return normalizedOrder;
     } catch (err) {
       console.error('Ошибка получения заказа:', err);
       throw err;

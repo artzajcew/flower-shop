@@ -10,7 +10,6 @@ import RegisterPage from './pages/RegisterPage';
 import AdminPage from './pages/AdminPage';
 import CheckoutPage from './pages/CheckoutPage';
 import ProductModal from './components/ProductModal/ProductModal';
-import OrderPage from './pages/OrderPage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import './App.css';
 
@@ -187,7 +186,6 @@ function AppContent() {
           <Route path='/register' element={<RegisterPage />} />
           <Route path='/admin' element={<AdminPage />} />
           <Route path='/checkout' element={<CheckoutPage />} />
-          <Route path="/order/:id" element={<OrderPage />} />
           <Route path="/my-orders" element={<MyOrdersPage />} />
         </Routes>
       </main>

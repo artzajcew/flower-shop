@@ -125,9 +125,7 @@ function MyOrdersPage() {
             <h2>Всего заказов: {userOrders.length}</h2>
             <div className="orders-list">
               {userOrders.map(order => {
-                // Получаем сумму заказа
                 const totalPrice = order.total_price || order.total || 0;
-                // Получаем количество товаров
                 const itemsCount = order.items?.length || 0;
 
                 return (
@@ -151,11 +149,11 @@ function MyOrdersPage() {
                     <div className="order-items-preview">
                       <strong>Товары:</strong>
                       {order.items?.slice(0, 2).map((item, idx) => {
-                        const itemName = item.product_name || item.name;
-                        const quantity = item.count || item.quantity;
+                        const itemName = item.product_name || item.name || 'Товар';
+                        const quantity = item.count || item.quantity || 1;
                         return (
                           <div key={idx} className="preview-item">
-                            {itemName} x{quantity}
+                            {itemName} — {quantity} шт.
                           </div>
                         );
                       })}
@@ -164,12 +162,7 @@ function MyOrdersPage() {
                       )}
                     </div>
 
-                    <button
-                      className="details-btn"
-                      onClick={() => navigate(`/order/${order.id}`)}
-                    >
-                      Подробнее
-                    </button>
+                    {/* КНОПКА УБРАНА - КЛИЕНТУ НЕ НУЖНА */}
                   </div>
                 );
               })}
