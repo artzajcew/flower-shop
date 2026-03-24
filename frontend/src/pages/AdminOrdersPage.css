@@ -1,8 +1,6 @@
 /* frontend/src/pages/AdminOrdersPage.css */
 .admin-orders {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 0;
 }
 
 .orders-count-header {
@@ -10,7 +8,7 @@
   padding: 12px 20px;
   border-radius: 8px;
   margin-bottom: 20px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: #333;
 }
@@ -23,9 +21,16 @@
 
 .order-card {
   background: white;
+  border: 1px solid #e0e0e0;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: none;
+}
+
+.order-card:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .order-header {
@@ -111,28 +116,22 @@
   width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   background: white;
+  transition: border-color 0.3s;
 }
 
-.status-select:hover {
+.status-select:hover,
+.status-select:focus {
   border-color: #6C0B08;
+  outline: none;
 }
 
 .no-orders {
   text-align: center;
   padding: 40px;
-  background: white;
-  border-radius: 12px;
-  color: #666;
-}
-
-.loading {
-  text-align: center;
-  padding: 40px;
-  font-size: 18px;
   color: #666;
 }
 

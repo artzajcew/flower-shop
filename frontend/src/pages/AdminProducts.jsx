@@ -151,6 +151,7 @@ function AdminProducts() {
 
   return (
     <div className="admin-products">
+      <h1>Управление товарами</h1>
       <div className="admin-actions">
         <button className="add-btn" onClick={handleAdd}>
           + Добавить новый букет
