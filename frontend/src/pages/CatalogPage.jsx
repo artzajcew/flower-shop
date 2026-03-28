@@ -140,6 +140,7 @@ function CatalogPage() {
                   category={flower.category?.name || flower.category}
                   image={flower.image}
                   description={flower.description}
+                  quantity={flower.quantity}
                 />
               ))}
             </div>

@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Optional
+from passlib.context import CryptContext
 
 from app.core.database import get_db
 from app.models.user import User
@@ -14,50 +15,53 @@ router = APIRouter(
     tags=["Authentication"]
 )
 
-# Список админов с их паролями
+# Контекст для bcrypt
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def hash_password(password: str) -> str:
+    """Захешировать пароль"""
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Проверить пароль против хеша"""
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+# Список админов — пароли теперь тоже хранятся в виде хешей.
+# Сгенерируй хеши один раз: hash_password("meoow") и вставь сюда.
+# Для удобства — временно оставляем plaintext с проверкой через verify,
+# но при первом запуске замени значения на реальные хеши.
 ADMIN_CREDENTIALS = {
-    "evh": "meoow",
-    "art": "meoow",
-    "yow": "meoow"
+    "evh": "$2b$12$YTP6fSXy06/XIi7XdEIHOOlYq4Yv8.KOiRX28XcEbaQKPhD8sQn6G",
+    "art": "$2b$12$YTP6fSXy06/XIi7XdEIHOOlYq4Yv8.KOiRX28XcEbaQKPhD8sQn6G",
+    "yow": "$2b$12$YTP6fSXy06/XIi7XdEIHOOlYq4Yv8.KOiRX28XcEbaQKPhD8sQn6G",
 }
+# ^^^ ВАЖНО: замени эти хеши! Запусти скрипт generate_admin_hashes.py (ниже)
 
 
 @router.post("/register", response_model=UserRead)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    """
-    Регистрация нового пользователя
-    """
-    # Проверяем, не занят ли email
+    """Регистрация нового пользователя"""
     if user_data.email:
         existing_user = db.query(User).filter(User.email == user_data.email).first()
         if existing_user:
-            raise HTTPException(
-                status_code=400,
-                detail="Пользователь с таким email уже существует"
-            )
+            raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует")
 
-    # Проверяем, не занят ли телефон
     if user_data.phone:
         existing_phone = db.query(User).filter(User.phone == user_data.phone).first()
         if existing_phone:
-            raise HTTPException(
-                status_code=400,
-                detail="Пользователь с таким телефоном уже существует"
-            )
+            raise HTTPException(status_code=400, detail="Пользователь с таким телефоном уже существует")
 
-    # Проверяем, не пытается ли кто-то зарегистрироваться с админским логином
     if user_data.email and user_data.email in ADMIN_CREDENTIALS:
-        raise HTTPException(
-            status_code=400,
-            detail="Этот логин зарезервирован для администраторов"
-        )
+        raise HTTPException(status_code=400, detail="Этот логин зарезервирован для администраторов")
 
-    # Создаем нового пользователя
     user = User(
         name=user_data.name,
         email=user_data.email,
         phone=user_data.phone,
-        password=user_data.password,  # Временное решение
+        password=hash_password(user_data.password),  # Хешируем пароль
         is_admin=False
     )
 
@@ -69,13 +73,10 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    """
-    Вход в систему
-    """
-    # Сначала проверяем, не админ ли это
+    """Вход в систему"""
+    # Проверяем, не админ ли это
     if form_data.username in ADMIN_CREDENTIALS:
-        if form_data.password == ADMIN_CREDENTIALS[form_data.username]:
-            # Обновляем last_login_date для админа
+        if verify_password(form_data.password, ADMIN_CREDENTIALS[form_data.username]):
             admin = db.query(User).filter(User.email == form_data.username).first()
             if admin:
                 admin.last_login_date = datetime.now()
@@ -89,34 +90,22 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
                 "message": "Добро пожаловать, администратор!"
             }
         else:
-            raise HTTPException(
-                status_code=401,
-                detail="Неверный пароль для администратора"
-            )
+            raise HTTPException(status_code=401, detail="Неверный пароль для администратора")
 
-    # Если не админ, ищем в базе обычных пользователей
+    # Обычный пользователь
     user = db.query(User).filter(
         (User.email == form_data.username) | (User.phone == form_data.username)
     ).first()
 
     if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Пользователь не найден"
-        )
+        raise HTTPException(status_code=401, detail="Пользователь не найден")
 
-    # Проверяем пароль
-    if user.password != form_data.password:
-        raise HTTPException(
-            status_code=401,
-            detail="Неверный пароль"
-        )
+    if not verify_password(form_data.password, user.password):
+        raise HTTPException(status_code=401, detail="Неверный пароль")
 
-    # Обновляем дату последнего входа
     user.last_login_date = datetime.now()
     db.commit()
 
-    # Возвращаем токен для обычного пользователя
     return {
         "access_token": f"user_token_{user.id}",
         "token_type": "bearer",
@@ -132,31 +121,19 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 @router.get("/me")
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """
-    Получить информацию о текущем пользователе по токену
-    """
+    """Получить информацию о текущем пользователе по токену"""
     if token.startswith("admin_token_"):
         username = token.replace("admin_token_", "")
         admin = db.query(User).filter(User.email == username).first()
         if admin:
-            return {
-                "id": admin.id,
-                "username": username,
-                "name": admin.name,
-                "is_admin": True
-            }
-        return {
-            "username": username,
-            "is_admin": True
-        }
+            return {"id": admin.id, "username": username, "name": admin.name, "is_admin": True}
+        return {"username": username, "is_admin": True}
+
     elif token.startswith("user_token_"):
         user_id = int(token.replace("user_token_", ""))
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
-            raise HTTPException(
-                status_code=401,
-                detail="Пользователь не найден"
-            )
+            raise HTTPException(status_code=401, detail="Пользователь не найден")
         return {
             "id": user.id,
             "username": user.email or user.phone,
@@ -164,7 +141,4 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
             "is_admin": False
         }
     else:
-        raise HTTPException(
-            status_code=401,
-            detail="Недействительный токен"
-        )
+        raise HTTPException(status_code=401, detail="Недействительный токен")

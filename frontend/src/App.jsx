@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { CartProvider } from './context/CartContext';
+import { CartProvider, useCart } from './context/CartContext';
 import { OrderProvider } from './context/OrderContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import CatalogPage from './pages/CatalogPage';
@@ -17,6 +17,7 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAdmin, loading: authLoading, logout } = useAuth();
+  const { totalItems } = useCart();
   const [modalProduct, setModalProduct] = useState(null);
 
   useEffect(() => {
@@ -49,7 +50,6 @@ function AppContent() {
     navigate('/');
   };
 
-  // Функция для определения активной ссылки
   const isActive = (path) => {
     if (path === '/') {
       return location.pathname === '/';
@@ -57,7 +57,13 @@ function AppContent() {
     return location.pathname.startsWith(path);
   };
 
-  // Если идет загрузка auth данных, показываем заглушку или не рендерим навигацию
+  const getCartLinkText = () => {
+    if (totalItems > 0) {
+      return `Корзина (${totalItems})`;
+    }
+    return 'Корзина';
+  };
+
   if (authLoading) {
     return (
       <div className="app">
@@ -78,9 +84,7 @@ function AppContent() {
     );
   }
 
-  // Определяем, какие ссылки показывать в зависимости от роли пользователя
   const renderNavLinks = () => {
-    // Для админа
     if (user && isAdmin) {
       return (
         <>
@@ -100,7 +104,6 @@ function AppContent() {
       );
     }
 
-    // Для авторизованного обычного пользователя
     if (user && !isAdmin) {
       return (
         <>
@@ -114,7 +117,7 @@ function AppContent() {
             to='/cart'
             className={`nav-link ${isActive('/cart') ? 'active' : ''}`}
           >
-            Корзина
+            {getCartLinkText()}
           </Link>
           <Link
             to='/my-orders'
@@ -126,7 +129,6 @@ function AppContent() {
       );
     }
 
-    // Для неавторизованного пользователя (гостя)
     return (
       <>
         <Link
@@ -139,7 +141,7 @@ function AppContent() {
           to='/cart'
           className={`nav-link ${isActive('/cart') ? 'active' : ''}`}
         >
-          Корзина
+          {getCartLinkText()}
         </Link>
       </>
     );
@@ -149,16 +151,13 @@ function AppContent() {
     <div className="app">
       <header className='header'>
         <nav className='nav'>
-          {/* Логотип слева - с отдельным классом */}
           <Link to='/' className='nav-logo'>
             More Than Flowers
           </Link>
 
-          {/* Группа правых кнопок */}
           <div className="nav-right">
             {renderNavLinks()}
 
-            {/* Кнопка входа/выхода */}
             {user ? (
               <button
                 onClick={handleLogout}

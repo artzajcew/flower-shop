@@ -1,6 +1,6 @@
 # app/api/v1/orders.py
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 from typing import List, Optional
 from decimal import Decimal
 from datetime import datetime
@@ -19,6 +19,32 @@ router = APIRouter(
 )
 
 
+def _build_order_response(order: Order, db: Session) -> dict:
+    """Вспомогательная функция сборки ответа заказа с товарами"""
+    order_items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
+    items = []
+    for item in order_items:
+        product = db.query(Product).filter(Product.id == item.good_id).first()
+        items.append({
+            "good_id": item.good_id,
+            "count": item.count,
+            "product_name": product.name if product else None,
+            "price": float(product.price) if product else 0
+        })
+    return {
+        "id": order.id,
+        "user_id": order.user_id,
+        "order_date": order.order_date,
+        "delivery_date": order.delivery_date,
+        "delivery_address": order.delivery_address,
+        "recipient_name": order.recipient_name,
+        "recipient_phone": order.recipient_phone,
+        "total_price": float(order.total_price),
+        "status": order.status,
+        "items": items
+    }
+
+
 @router.post("/", response_model=OrderRead, status_code=201)
 def create_order(
     order_data: OrderCreate,
@@ -30,22 +56,29 @@ def create_order(
     if not user:
         raise HTTPException(status_code=401, detail="Пользователь не найден")
 
+    # Загружаем все нужные продукты одним запросом
     good_ids = [item.good_id for item in order_data.items]
-    products = db.query(Product).filter(Product.id.in_(good_ids)).all()
+    products = db.query(Product).filter(Product.id.in_(good_ids)).with_for_update().all()
     products_dict = {p.id: p for p in products}
 
+    # Валидация: наличие товаров и достаточность остатков
     for item in order_data.items:
         product = products_dict.get(item.good_id)
         if not product:
             raise HTTPException(status_code=404, detail=f"Товар с id {item.good_id} не найден")
         if product.quantity < item.count:
-            raise HTTPException(status_code=400, detail=f"Товар '{product.name}' доступен только в количестве {product.quantity}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Товар '{product.name}' доступен только в количестве {product.quantity}"
+            )
 
+    # Считаем итоговую сумму
     total_price = Decimal(0)
     for item in order_data.items:
         product = products_dict[item.good_id]
         total_price += product.price * item.count
 
+    # Создаём заказ
     db_order = Order(
         user_id=user.id,
         delivery_date=order_data.delivery_date,
@@ -56,45 +89,80 @@ def create_order(
         status="Новый"
     )
     db.add(db_order)
-    db.flush()
+    db.flush()  # Получаем id заказа без коммита
 
+    # Создаём позиции заказа и СПИСЫВАЕМ остатки
     for item in order_data.items:
         product = products_dict[item.good_id]
+
         order_item = OrderItem(
             order_id=db_order.id,
             good_id=item.good_id,
             count=item.count
         )
         db.add(order_item)
-        product.quantity -= item.count
 
-    db.commit()
+        # Явно изменяем объект, который отслеживается сессией
+        product.quantity = product.quantity - item.count
+
+    db.commit()  # Один коммит: и заказ, и позиции, и списание
     db.refresh(db_order)
 
-    # Получаем товары для ответа
-    order_items = db.query(OrderItem).filter(OrderItem.order_id == db_order.id).all()
-    items = []
-    for item in order_items:
-        product = db.query(Product).filter(Product.id == item.good_id).first()
-        items.append({
-            "good_id": item.good_id,
-            "count": item.count,
-            "product_name": product.name if product else None,
-            "price": float(product.price) if product else 0
+    return _build_order_response(db_order, db)
+
+
+@router.get("/search")
+def search_orders_simple(
+    email: Optional[str] = None,
+    phone: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Поиск заказов по email или телефону (без авторизации)"""
+    if not email and not phone:
+        return []
+
+    user = None
+    if email:
+        user = db.query(User).filter(User.email == email).first()
+    elif phone:
+        user = db.query(User).filter(User.phone == phone).first()
+
+    if not user:
+        return []
+
+    orders = db.query(Order).filter(Order.user_id == user.id).order_by(Order.order_date.desc()).all()
+
+    result = []
+    for order in orders:
+        order_items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
+        items = []
+        for item in order_items:
+            product = db.query(Product).filter(Product.id == item.good_id).first()
+            items.append({
+                "good_id": item.good_id,
+                "count": item.count,
+                "product_name": product.name if product else None,
+                "price": float(product.price) if product else 0
+            })
+        result.append({
+            "id": order.id,
+            "user_id": order.user_id,
+            "order_date": str(order.order_date) if order.order_date else None,
+            "delivery_date": str(order.delivery_date) if order.delivery_date else None,
+            "delivery_address": order.delivery_address,
+            "recipient_name": order.recipient_name,
+            "recipient_phone": order.recipient_phone,
+            "total_price": float(order.total_price) if order.total_price else 0,
+            "status": order.status,
+            "items": items
         })
 
-    return {
-        "id": db_order.id,
-        "user_id": db_order.user_id,
-        "order_date": db_order.order_date,
-        "delivery_date": db_order.delivery_date,
-        "delivery_address": db_order.delivery_address,
-        "recipient_name": db_order.recipient_name,
-        "recipient_phone": db_order.recipient_phone,
-        "total_price": float(db_order.total_price),
-        "status": db_order.status,
-        "items": items
-    }
+    return result
+
+
+@router.post("/search")
+def search_orders_simple_post(request: dict, db: Session = Depends(get_db)):
+    return search_orders_simple(email=request.get('email'), phone=request.get('phone'), db=db)
 
 
 @router.get("/", response_model=List[OrderRead])
@@ -118,37 +186,7 @@ def get_orders(
         query = query.filter(Order.status == status)
 
     orders = query.order_by(Order.order_date.desc()).offset(skip).limit(limit).all()
-
-    # Формируем ответ с товарами
-    result = []
-    for order in orders:
-        # Получаем товары для заказа
-        order_items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
-        items = []
-
-        for item in order_items:
-            product = db.query(Product).filter(Product.id == item.good_id).first()
-            items.append({
-                "good_id": item.good_id,
-                "count": item.count,
-                "product_name": product.name if product else None,
-                "price": float(product.price) if product else 0
-            })
-
-        result.append({
-            "id": order.id,
-            "user_id": order.user_id,
-            "order_date": order.order_date,
-            "delivery_date": order.delivery_date,
-            "delivery_address": order.delivery_address,
-            "recipient_name": order.recipient_name,
-            "recipient_phone": order.recipient_phone,
-            "total_price": float(order.total_price),
-            "status": order.status,
-            "items": items
-        })
-
-    return result
+    return [_build_order_response(order, db) for order in orders]
 
 
 @router.get("/{order_id}", response_model=OrderRead)
@@ -164,31 +202,7 @@ def get_order(
     if not current_user.get("is_admin", False) and order.user_id != current_user.get("id"):
         raise HTTPException(status_code=403, detail="Нет доступа к этому заказу")
 
-    # Получаем товары для заказа
-    order_items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
-    items = []
-
-    for item in order_items:
-        product = db.query(Product).filter(Product.id == item.good_id).first()
-        items.append({
-            "good_id": item.good_id,
-            "count": item.count,
-            "product_name": product.name if product else None,
-            "price": float(product.price) if product else 0
-        })
-
-    return {
-        "id": order.id,
-        "user_id": order.user_id,
-        "order_date": order.order_date,
-        "delivery_date": order.delivery_date,
-        "delivery_address": order.delivery_address,
-        "recipient_name": order.recipient_name,
-        "recipient_phone": order.recipient_phone,
-        "total_price": float(order.total_price),
-        "status": order.status,
-        "items": items
-    }
+    return _build_order_response(order, db)
 
 
 @router.patch("/{order_id}/status", response_model=OrderRead)
@@ -198,7 +212,7 @@ def update_order_status(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Изменить статус заказа"""
+    """Изменить статус заказа (только администратор)"""
     if not current_user.get("is_admin", False):
         raise HTTPException(status_code=403, detail="Только администратор может изменять статус заказа")
 
@@ -211,99 +225,4 @@ def update_order_status(
 
     db.commit()
     db.refresh(order)
-
-    # Получаем товары для заказа
-    order_items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
-    items = []
-
-    for item in order_items:
-        product = db.query(Product).filter(Product.id == item.good_id).first()
-        items.append({
-            "good_id": item.good_id,
-            "count": item.count,
-            "product_name": product.name if product else None,
-            "price": float(product.price) if product else 0
-        })
-
-    return {
-        "id": order.id,
-        "user_id": order.user_id,
-        "order_date": order.order_date,
-        "delivery_date": order.delivery_date,
-        "delivery_address": order.delivery_address,
-        "recipient_name": order.recipient_name,
-        "recipient_phone": order.recipient_phone,
-        "total_price": float(order.total_price),
-        "status": order.status,
-        "items": items
-    }
-
-
-@router.get("/search")
-def search_orders_simple(
-    email: Optional[str] = None,
-    phone: Optional[str] = None,
-    db: Session = Depends(get_db)
-):
-    """Поиск заказов по email или телефону"""
-    print("="*50)
-    print("ПОИСК ЗАКАЗОВ")
-    print(f"email: {email}, phone: {phone}")
-
-    if not email and not phone:
-        return []
-
-    user = None
-    if email:
-        user = db.query(User).filter(User.email == email).first()
-        print(f"Поиск по email {email}: {'найден' if user else 'не найден'}")
-    elif phone:
-        user = db.query(User).filter(User.phone == phone).first()
-        print(f"Поиск по phone {phone}: {'найден' if user else 'не найден'}")
-
-    if not user:
-        return []
-
-    orders = db.query(Order).filter(Order.user_id == user.id).order_by(Order.order_date.desc()).all()
-    print(f"Найдено заказов: {len(orders)}")
-
-    result = []
-    for order in orders:
-        # Получаем товары для заказа
-        order_items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
-        items = []
-
-        for item in order_items:
-            product = db.query(Product).filter(Product.id == item.good_id).first()
-            items.append({
-                "good_id": item.good_id,
-                "count": item.count,
-                "product_name": product.name if product else None,
-                "price": float(product.price) if product else 0
-            })
-
-        result.append({
-            "id": order.id,
-            "user_id": order.user_id,
-            "order_date": str(order.order_date) if order.order_date else None,
-            "delivery_date": str(order.delivery_date) if order.delivery_date else None,
-            "delivery_address": order.delivery_address,
-            "recipient_name": order.recipient_name,
-            "recipient_phone": order.recipient_phone,
-            "total_price": float(order.total_price) if order.total_price else 0,
-            "status": order.status,
-            "items": items
-        })
-
-    print("="*50)
-    return result
-
-
-@router.post("/search")
-def search_orders_simple_post(
-    request: dict,
-    db: Session = Depends(get_db)
-):
-    email = request.get('email')
-    phone = request.get('phone')
-    return search_orders_simple(email=email, phone=phone, db=db)
+    return _build_order_response(order, db)

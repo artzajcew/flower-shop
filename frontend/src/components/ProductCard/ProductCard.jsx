@@ -1,16 +1,20 @@
 // frontend/src/components/ProductCard/ProductCard.jsx
 import React, { useState } from 'react';
 import { useCart } from '../../context/CartContext';
-import { useAuth } from '../../context/AuthContext'; // Добавляем импорт
+import { useAuth } from '../../context/AuthContext';
 import './ProductCard.css';
 
-function ProductCard({ id, name, price, image, category, description }) {
-  const { addToCart } = useCart();
-  const { user } = useAuth(); // Получаем информацию о пользователе
+function ProductCard({ id, name, price, image, category, description, quantity }) {
+  const { cart, addToCart, updateQuantity, removeFromCart } = useCart();
+  const { user } = useAuth();
   const [imgError, setImgError] = useState(false);
-  const [buttonText, setButtonText] = useState('В корзину');
-  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false); // Для модального окна
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Получаем количество этого товара в корзине
+  const cartItem = cart.find(item => item.id === id);
+  const cartQuantity = cartItem ? cartItem.quantity : 0;
+  
+  const isInStock = quantity > 0;
 
   const product = {
     id,
@@ -18,7 +22,8 @@ function ProductCard({ id, name, price, image, category, description }) {
     price,
     image,
     category,
-    description
+    description,
+    quantity
   };
 
   const handleCardClick = () => {
@@ -29,23 +34,43 @@ function ProductCard({ id, name, price, image, category, description }) {
   const handleAddToCart = (e) => {
     e.stopPropagation();
     
-    // Проверяем, авторизован ли пользователь
     if (!user) {
-      // Показываем модальное окно с предупреждением
       setShowAuthModal(true);
       return;
     }
     
-    // Если авторизован - добавляем в корзину
+    if (!isInStock) {
+      alert('Товар временно отсутствует на складе');
+      return;
+    }
+    
     addToCart(product);
-    
-    setButtonText('Добавлено!');
-    setIsButtonDisabled(true);
-    
-    setTimeout(() => {
-      setButtonText('В корзину');
-      setIsButtonDisabled(false);
-    }, 3000);
+  };
+
+  const handleIncrease = (e) => {
+    e.stopPropagation();
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    if (cartQuantity + 1 <= quantity) {
+      updateQuantity(id, cartQuantity + 1);
+    } else {
+      alert(`На складе только ${quantity} шт.`);
+    }
+  };
+
+  const handleDecrease = (e) => {
+    e.stopPropagation();
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    if (cartQuantity > 1) {
+      updateQuantity(id, cartQuantity - 1);
+    } else {
+      removeFromCart(id);
+    }
   };
 
   const handleImageError = () => {
@@ -75,17 +100,44 @@ function ProductCard({ id, name, price, image, category, description }) {
           <span className="product-category">{category}</span>
           <h3 className="product-name">{name}</h3>
           <p className="product-price">{Number(price).toLocaleString()} ₽</p>
-          <button 
-            className={`add-to-cart-btn ${isButtonDisabled ? 'added' : ''}`}
-            onClick={handleAddToCart}
-            disabled={isButtonDisabled}
-          >
-            {buttonText}
-          </button>
+          <p className="product-stock">
+            {isInStock ? (
+              <span className="in-stock">В наличии: {quantity} шт.</span>
+            ) : (
+              <span className="out-of-stock">Нет в наличии</span>
+            )}
+          </p>
+          
+          {cartQuantity > 0 ? (
+            <div className="cart-controls" onClick={(e) => e.stopPropagation()}>
+              <button 
+                className="cart-decrease-btn"
+                onClick={handleDecrease}
+                disabled={!isInStock}
+              >
+                -
+              </button>
+              <span className="cart-quantity">{cartQuantity}</span>
+              <button 
+                className="cart-increase-btn"
+                onClick={handleIncrease}
+                disabled={!isInStock || cartQuantity >= quantity}
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            <button
+              className={`add-to-cart-btn ${!isInStock ? 'disabled' : ''}`}
+              onClick={handleAddToCart}
+              disabled={!isInStock}
+            >
+              {!isInStock ? 'Нет в наличии' : 'В корзину'}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Модальное окно для неавторизованных */}
       {showAuthModal && (
         <div className="auth-modal-overlay" onClick={() => setShowAuthModal(false)}>
           <div className="auth-modal-content" onClick={e => e.stopPropagation()}>
